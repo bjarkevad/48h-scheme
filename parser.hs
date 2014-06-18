@@ -23,18 +23,7 @@ data LispVal =
     | Float Float
     | Ratio Rational
     | Complex (Complex Double)
-
-instance Show LispVal where
-    show (Atom a) = "Atom " ++ a
-    show (List l) = "List " ++ show l
-    show (DottedList l v) = "DottedList " ++ show l ++ " " ++ show v
-    show (Number i) = "Number " ++ show i
-    show (String s) = "String " ++ s
-    show (Bool b) = "Bool " ++ show b
-    show (Character c) = "Character " ++ show c
-    show (Float f) = "Float " ++ show f
-    show (Ratio r) = "Ratio " ++ show r
-    show (Complex c) = "Complex " ++ show c
+    deriving Show
 
 escapedChars :: Parser Char
 escapedChars = do 
