@@ -3,6 +3,7 @@ import System.Environment
 import Numeric (readHex, readOct, readFloat)
 import Data.Complex
 import Data.Ratio
+import Data.Array
 import GHC.Float (float2Double)
 import Control.Monad
 
@@ -23,6 +24,7 @@ data LispVal =
     | Float Float
     | Ratio Rational
     | Complex (Complex Double)
+    | Vector (Array Int LispVal)
     deriving Show
 
 escapedChars :: Parser Char
@@ -147,11 +149,31 @@ parseDottedList = do
     tail <- char '.' >> spaces >> parseExpr
     return $ DottedList head tail
 
+parseAnyList :: Parser LispVal
+parseAnyList = undefined
+
 parseQuoted :: Parser LispVal
 parseQuoted = do
     char '\''
     x <- parseExpr
     return $ List [Atom "quote", x]
+
+parseQuasiQuoted :: Parser LispVal
+parseQuasiQuoted = do 
+    char '`'
+    x <- parseExpr
+    return $ List [Atom "quasiquote", x]
+
+parseUnQuote :: Parser LispVal
+parseUnQuote = do
+    char ','
+    x <- parseExpr
+    return $ List [Atom "unquote", x]
+
+parseVector :: Parser LispVal
+parseVector = do 
+    arrayValues <- sepBy parseExpr spaces
+    return $ Vector (listArray (0,(length arrayValues -1)) arrayValues)
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom 
@@ -163,11 +185,18 @@ parseExpr = parseAtom
     <|> try parseBool
     <|> try parseCharacter
     <|> parseQuoted
+    <|> parseQuasiQuoted
+    <|> parseUnQuote
     <|> do 
         char '('
         x <- try parseList <|> parseDottedList 
         char ')'
         return x
+    <|> try (do 
+                string "#("
+                x <- parseVector
+                char ')'
+                return x)
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "lisp" input of 
